@@ -1,0 +1,223 @@
+-- Rayfield Library Load
+local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
+
+-- Create UI Window
+local Window = Rayfield:CreateWindow({
+    Name = "RZ Hub • PV",
+    LoadingTitle = "Gym Star Simulator",
+    LoadingSubtitle = "By JustKondzio0"
+})
+
+-- UI Tabs
+local AutoFarmTab = Window:CreateTab("Auto Farm")
+local AutoRankTab = Window:CreateTab("Auto Rank")
+local PotionsTab  = Window:CreateTab("Potions")
+local MiscTab     = Window:CreateTab("Misc")
+
+-- Global States & Variables
+_G.AutoFarmEverything = false
+_G.AutoRank = false
+
+local EnabledFarms = {}
+local StatCategories = {"Chest", "Back", "Legs", "Abs", "Arms", "Stamina"}
+local CurrentFarmIndex = 1
+local LastFarmSwitch = tick()
+
+-- Services
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Msg = ReplicatedStorage:WaitForChild("Msg")
+local RemoteEvent = Msg:WaitForChild("RemoteEvent")
+local ClickRemote = Msg:WaitForChild("Click")
+
+-- Equipment References
+local Scene1 = workspace:WaitForChild("Scene"):WaitForChild("1"):WaitForChild("Training equipment")
+
+local TrainingEquipment = {
+    ["Chest"] = {
+        Scene1:WaitForChild("卧推1"),
+        Scene1:WaitForChild("卧推4"),
+        Scene1:WaitForChild("卧推5"),
+        Scene1:WaitForChild("卧推2")
+    },
+    ["Back"] = {
+        Scene1:WaitForChild("拉力器3"),
+        Scene1:WaitForChild("拉力器2"),
+        Scene1:WaitForChild("拉力器1")
+    },
+    ["Legs"] = {
+        Scene1:WaitForChild("腿部器械2"),
+        Scene1:WaitForChild("腿部器械3"),
+        Scene1:WaitForChild("腿部器械4")
+    },
+    ["Abs"] = {
+        Scene1:WaitForChild("腹部卷腹4"),
+        Scene1:WaitForChild("腹部卷腹2"),
+        Scene1:WaitForChild("腹部卷腹3")
+    },
+    ["Arms"] = {
+        Scene1:WaitForChild("手臂2"),
+        Scene1:WaitForChild("手臂1"),
+        Scene1:WaitForChild("手臂4")
+    },
+    ["Stamina"] = {
+        Scene1:WaitForChild("耐力3"),
+        Scene1:WaitForChild("耐力6"),
+        Scene1:WaitForChild("耐力2"),
+        Scene1:WaitForChild("耐力5")
+    }
+}
+
+-- Helper Functions
+local function StartTraining(equipmentList)
+    ClickRemote:FireServer()
+    task.wait(0.1)
+    
+    for _, equipment in ipairs(equipmentList) do
+        RemoteEvent:FireServer("StartTrain", equipment)
+    end
+end
+
+local function CreateFarmToggle(displayName, statKey)
+    AutoFarmTab:CreateToggle({
+        Name = displayName,
+        CurrentState = false,
+        Callback = function(Value)
+            if Value then
+                EnabledFarms[statKey] = TrainingEquipment[statKey]
+                Rayfield:Notify({
+                    Title = "Status",
+                    Content = statKey .. " Farm: Enabled",
+                    Duration = 3
+                })
+            else
+                EnabledFarms[statKey] = nil
+                Rayfield:Notify({
+                    Title = "Status",
+                    Content = statKey .. " Farm: Disabled",
+                    Duration = 3
+                })
+            end
+        end
+    })
+end
+
+-- ==================== TAB: AUTO FARM ====================
+AutoFarmTab:CreateParagraph({
+    Title = "Important Information",
+    Content = "If something breaks, please rejoin the game and reinject the script. The AutoFarm EVERYTHING feature cycles through all farms every 10 seconds. Warning: This feature may sometimes be buggy."
+})
+
+-- Create individual farm toggles
+CreateFarmToggle("Chest Farm", "Chest")
+CreateFarmToggle("Back Farm", "Back")
+CreateFarmToggle("Legs Farm", "Legs")
+CreateFarmToggle("Abs Farm", "Abs")
+CreateFarmToggle("Arms Farm", "Arms")
+CreateFarmToggle("Stamina Farm", "Stamina")
+
+-- Cycle All Farms Toggle
+AutoFarmTab:CreateToggle({
+    Name = "AutoFarm EVERYTHING",
+    CurrentState = false,
+    Callback = function(Value)
+        _G.AutoFarmEverything = Value
+        if Value then
+            CurrentFarmIndex = 1
+            LastFarmSwitch = tick()
+            Rayfield:Notify({ Title = "Status", Content = "AutoFarm EVERYTHING: Enabled", Duration = 3 })
+        else
+            Rayfield:Notify({ Title = "Status", Content = "AutoFarm EVERYTHING: Disabled", Duration = 3 })
+        end
+    end
+})
+
+-- ==================== TAB: AUTO RANK ====================
+AutoRankTab:CreateToggle({
+    Name = "Auto Rank",
+    CurrentState = false,
+    Callback = function(Value)
+        _G.AutoRank = Value
+        Rayfield:Notify({
+            Title = "Status",
+            Content = "Auto Rank: " .. (Value and "Enabled" or "Disabled"),
+            Duration = 3
+        })
+    end
+})
+
+-- ==================== TAB: POTIONS ====================
+-- ID 101 = Protein Bars
+PotionsTab:CreateButton({
+    Name = "Use Protein Bars",
+    Callback = function()
+        RemoteEvent:FireServer("使用药水", 101, 1)
+        Rayfield:Notify({ Title = "Potions", Content = "Used 1x Protein Bar.", Duration = 3 })
+    end
+})
+
+-- ID 201 = Energy Drinks
+PotionsTab:CreateButton({
+    Name = "Use Energy Drinks",
+    Callback = function()
+        RemoteEvent:FireServer("使用药水", 201, 1)
+        Rayfield:Notify({ Title = "Potions", Content = "Used 1x Energy Drink.", Duration = 3 })
+    end
+})
+
+-- ID 301 = Essential Oils
+PotionsTab:CreateButton({
+    Name = "Use Essential Oils",
+    Callback = function()
+        RemoteEvent:FireServer("使用药水", 301, 1)
+        Rayfield:Notify({ Title = "Potions", Content = "Used 1x Essential Oil.", Duration = 3 })
+    end
+})
+
+-- ==================== TAB: MISC ====================
+MiscTab:CreateButton({
+    Name = "Click To Copy Discord Invite!",
+    Callback = function()
+        setclipboard("https://discord.gg/nQ5pCft2Ve")
+        Rayfield:Notify({
+            Title = "Discord invite!",
+            Content = "The link has been copied to the clipboard!",
+            Duration = 5
+        })
+    end
+})
+
+MiscTab:CreateParagraph({
+    Title = "ⓘ Support Info!",
+    Content = "If You Need Help Or Want To Report A Bug Join Our Discord And Create A Ticket In Support Section"
+})
+
+-- ==================== MAIN LOOP ====================
+task.spawn(function()
+    while task.wait(0.5) do
+        if _G.AutoFarmEverything then
+            -- Switch through stats every 10 seconds
+            if tick() - LastFarmSwitch > 10 then
+                CurrentFarmIndex = CurrentFarmIndex + 1
+                if CurrentFarmIndex > #StatCategories then
+                    CurrentFarmIndex = 1
+                end
+                LastFarmSwitch = tick()
+            end
+
+            local currentStat = StatCategories[CurrentFarmIndex]
+            if TrainingEquipment[currentStat] then
+                StartTraining(TrainingEquipment[currentStat])
+            end
+        else
+            -- Process specific active farm toggles
+            for _, equipmentList in pairs(EnabledFarms) do
+                StartTraining(equipmentList)
+            end
+
+            -- Process Auto Rank
+            if _G.AutoRank then
+                RemoteEvent:FireServer("修改记录", { "收藏通知", 1 })
+            end
+        end
+    end
+end)
